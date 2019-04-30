@@ -8,6 +8,10 @@ Indices and products are partially inspired by https://www.sentinel-hub.com/deve
 2. Functionality
     - Basic indices like NDVI, NDWI
     - Basic Products like False Color
+    - cloud and snow mask
+    - zero division
+    - tiff or virtual raster
+    - threshold value to get binary raster
 3. Extensions
     - Give user possibility to add custom indices
     - Use other satellite imagery
