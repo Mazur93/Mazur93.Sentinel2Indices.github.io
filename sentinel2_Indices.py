@@ -23,13 +23,80 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QAction, QFileDialog
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .sentinel2_Indices_dialog import sentinel2IndicesDialog
 import os.path
+import numpy as np
+
+#####START INDEXES#######
+class SatelliteIndex:
+    def __init__(self,name):
+        self.name = name
+
+idxs = []
+
+
+#Basic index function, which calculates (channel1 - channel2)/(channel1 + channel2)
+#input: 2 x 2D-numpy array, output = 1 x 2D-numpy array
+def build_simple_index(channel1, channel2):
+    # calculate index
+    idx = channel1 - channel2
+    idx = np.divide(idx, (channel1 + channel2))
+    return idx
+
+
+#Normalized Difference Vegetation Index
+NDVI = SatelliteIndex('Normalized Difference Vegetation Index')
+NDVI.abbreviation = 'NDVI'
+NDVI.channels = ['B08', 'B04']
+NDVI.function = build_simple_index
+NDVI.use = 'Detection of vegetation'
+NDVI.Source = 'https://www.sentinel-hub.com/eoproducts/ndvi-normalized-difference-vegetation-index'
+idxs.append(NDVI)
+
+#Normalized Difference Water Index
+NDWI = SatelliteIndex('Normalized Difference Water Index')
+NDWI.abbreviation = 'NDWI'
+NDWI.channels = ['B08', 'B11']
+NDWI.function = build_simple_index
+NDWI.use = 'Detection of water'
+NDWI.Source = 'https://www.sentinel-hub.com/develop/documentation/eo_products/Sentinel2EOproducts'
+idxs.append(NDWI)
+
+#Modified Normalized Difference Water Index
+MNDWI = SatelliteIndex('Modified Normalized Difference Water Index')
+MNDWI.abbreviation = 'MNDWI'
+MNDWI.channels = ['B03', 'B11']
+MNDWI.function = build_simple_index
+MNDWI.use = 'Detection of water'
+MNDWI.Source = 'https://www.mdpi.com/2072-4292/8/4/354'
+idxs.append(MNDWI)
+
+#####END INDEXES#######
+
+#####START PRODUCTS#######
+class SatelliteProduct:
+    def __init__(self, name, channels, abbreviation, source):
+        self.name = name
+        self.channels = channels
+        self.abbreviation = abbreviation
+        self.source = source
+
+products = []
+
+#The order is always red, green and blue.
+
+TrueColour = SatelliteProduct("True Colour Image", ["B04", "B03", "B02"], "True Colour", "https://www.sentinel-hub.com/eoproducts/true-color")
+products.append(TrueColour)
+
+FalseColour = SatelliteProduct("False Colour Composite", ["B08", "B04", "B03"], "False Colour", "https://www.sentinel-hub.com/eoproducts/false-color")
+products.append(FalseColour)
+
+#####END PRODUCTS#######
 
 
 class sentinel2Indices:
@@ -68,6 +135,7 @@ class sentinel2Indices:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+        self.sentinelFolder = ''
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -181,6 +249,10 @@ class sentinel2Indices:
                 action)
             self.iface.removeToolBarIcon(action)
 
+    def select_sentinel_folder(self):
+        filename = QFileDialog.getExistingDirectory(self.dlg, "Select Sentinel2 folder", "/home")
+        self.dlg.lineEdit.setText(filename)
+        self.sentinelFolder = filename
 
     def run(self):
         """Run method that performs all the real work"""
@@ -190,6 +262,22 @@ class sentinel2Indices:
         if self.first_start == True:
             self.first_start = False
             self.dlg = sentinel2IndicesDialog()
+            self.dlg.selectSentinelFolder.clicked.connect(self.select_sentinel_folder)
+
+        #clear indexes
+        self.dlg.potentialIndices.clear()
+        #load indexes
+        self.dlg.potentialIndices.addItems([index.abbreviation for index in idxs])
+
+        # clear products
+        self.dlg.potentialProducts.clear()
+        # load products
+        self.dlg.potentialProducts.addItems([product.abbreviation for product in products])
+
+        #clear sentinel folder
+        self.sentinelFolder = ''
+        self.dlg.lineEdit.clear()
+
 
         # show the dialog
         self.dlg.show()
@@ -199,4 +287,5 @@ class sentinel2Indices:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+            print(self.sentinelFolder)
             pass
