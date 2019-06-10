@@ -31,13 +31,65 @@ from .resources import *
 from .sentinel2_Indices_dialog import sentinel2IndicesDialog
 import os.path
 import numpy as np
+import glob
+import gdal
+
+#####START Sentinel Class#######
+class sentinelImage:
+    def __init__(self,path):
+        self.path = path
+        self.product_name = os.path.basename(self.path)
+        self.tile_name = os.path.basename(self.path).split('_')[-2]
+        self.granule_folder = os.path.join(self.path, 'GRANULE')
+        self.under_granule_folder = next(os.walk(self.granule_folder))[1][0]
+        self.resolution_folder_path = os.path.join(self.granule_folder, self.under_granule_folder, 'IMG_DATA')
+        self.resolution_folder_names = ['R10m', 'R20m', 'R60m']
+    def get_band(self, bandString, resolution):
+        highest_resolution_available = highest_resolution_for_band(self, bandString)
+        if resolution == highest_resolution_available:
+            pass #get image from folder
+        #create image in resolution
+        else:
+            if resolution < highest_resolution_available:
+                raise Exception('The requested resolution is better than the highest available')
+            else:
+                # sampling to coarser resolution
+                pass
+
+    def highest_resolution_and_path_for_band(self, bandString):
+        potential10m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R10m')) if
+                        image.endswith(bandString + '_10m.jp2')]
+        potential20m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R20m')) if
+                        image.endswith(bandString + '_20m.jp2')]
+        potential60m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R60m')) if
+                        image.endswith(bandString + '_60m.jp2')]
+        if len(potential10m) == 1:
+            return 10, os.path.join(self.resolution_folder_path,'R10m',potential10m[0])
+        elif len(potential20m) == 1:
+            return 20, os.path.join(self.resolution_folder_path,'R20m',potential20m[0])
+        elif len(potential60m) == 1:
+            return 60, os.path.join(self.resolution_folder_path,'R60m',potential60m[0])
+        else:
+            raise("Band not available")
+
+    def band_to_numpy_array(self,image_path):
+        """Opens image in JP2 file and returns it casted to a numpy array
+                """
+        img = gdal.Open(image_path)  # load image
+        band = img.GetRasterBand(1)  # get bands
+        band_np = band.ReadAsArray().astype(float)  #convert into numpy arrays. Floats because of the subsequent division
+        return band_np
+
+
+#####END Sentinel Class#######
+
 
 #####START INDEXES#######
 class SatelliteIndex:
     def __init__(self,name):
         self.name = name
 
-idxs = []
+idxs = {}
 
 
 #Basic index function, which calculates (channel1 - channel2)/(channel1 + channel2)
@@ -56,7 +108,7 @@ NDVI.channels = ['B08', 'B04']
 NDVI.function = build_simple_index
 NDVI.use = 'Detection of vegetation'
 NDVI.Source = 'https://www.sentinel-hub.com/eoproducts/ndvi-normalized-difference-vegetation-index'
-idxs.append(NDVI)
+idxs['NDVI'] = (NDVI)
 
 #Normalized Difference Water Index
 NDWI = SatelliteIndex('Normalized Difference Water Index')
@@ -65,7 +117,7 @@ NDWI.channels = ['B08', 'B11']
 NDWI.function = build_simple_index
 NDWI.use = 'Detection of water'
 NDWI.Source = 'https://www.sentinel-hub.com/develop/documentation/eo_products/Sentinel2EOproducts'
-idxs.append(NDWI)
+idxs['NDWI'] = NDWI
 
 #Modified Normalized Difference Water Index
 MNDWI = SatelliteIndex('Modified Normalized Difference Water Index')
@@ -74,7 +126,7 @@ MNDWI.channels = ['B03', 'B11']
 MNDWI.function = build_simple_index
 MNDWI.use = 'Detection of water'
 MNDWI.Source = 'https://www.mdpi.com/2072-4292/8/4/354'
-idxs.append(MNDWI)
+idxs['MNDWI'] = MNDWI
 
 #####END INDEXES#######
 
@@ -86,15 +138,15 @@ class SatelliteProduct:
         self.abbreviation = abbreviation
         self.source = source
 
-products = []
+products = {}
 
 #The order is always red, green and blue.
 
 TrueColour = SatelliteProduct("True Colour Image", ["B04", "B03", "B02"], "True Colour", "https://www.sentinel-hub.com/eoproducts/true-color")
-products.append(TrueColour)
+products['True Colour'] = TrueColour
 
 FalseColour = SatelliteProduct("False Colour Composite", ["B08", "B04", "B03"], "False Colour", "https://www.sentinel-hub.com/eoproducts/false-color")
-products.append(FalseColour)
+products['False Colour'] = FalseColour
 
 #####END PRODUCTS#######
 
@@ -267,12 +319,12 @@ class sentinel2Indices:
         #clear indexes
         self.dlg.potentialIndices.clear()
         #load indexes
-        self.dlg.potentialIndices.addItems([index.abbreviation for index in idxs])
+        self.dlg.potentialIndices.addItems([index.abbreviation for index in idxs.values()])
 
         # clear products
         self.dlg.potentialProducts.clear()
         # load products
-        self.dlg.potentialProducts.addItems([product.abbreviation for product in products])
+        self.dlg.potentialProducts.addItems([product.abbreviation for product in products.values()])
 
         #clear sentinel folder
         self.sentinelFolder = ''
@@ -288,4 +340,22 @@ class sentinel2Indices:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             print(self.sentinelFolder)
+            selectedIndices = [item.text() for item in self.dlg.potentialIndices.selectedItems()]
+            selectedIndices.sort()
+            print(selectedIndices)
+
+            selectedProducts = [item.text() for item in self.dlg.potentialProducts.selectedItems()]
+            selectedProducts.sort()
+            print(selectedProducts)
+
+            for i in selectedProducts:
+                print(products[i].channels)
+
+            sentImage = sentinelImage(self.sentinelFolder)
+            print (sentImage.tile_name)
+            res, path = sentImage.highest_resolution_and_path_for_band("B03")
+            print("Path: " + path)
+            a = sentImage.band_to_numpy_array(path)
+            print(a.shape)
+
             pass
