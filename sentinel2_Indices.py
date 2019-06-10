@@ -33,123 +33,9 @@ import os.path
 import numpy as np
 import glob
 import gdal
-
-#####START Sentinel Class#######
-class sentinelImage:
-    def __init__(self,path):
-        self.path = path
-        self.product_name = os.path.basename(self.path)
-        self.tile_name = os.path.basename(self.path).split('_')[-2]
-        self.granule_folder = os.path.join(self.path, 'GRANULE')
-        self.under_granule_folder = next(os.walk(self.granule_folder))[1][0]
-        self.resolution_folder_path = os.path.join(self.granule_folder, self.under_granule_folder, 'IMG_DATA')
-        self.resolution_folder_names = ['R10m', 'R20m', 'R60m']
-    def get_band(self, bandString, resolution):
-        highest_resolution_available = highest_resolution_for_band(self, bandString)
-        if resolution == highest_resolution_available:
-            pass #get image from folder
-        #create image in resolution
-        else:
-            if resolution < highest_resolution_available:
-                raise Exception('The requested resolution is better than the highest available')
-            else:
-                # sampling to coarser resolution
-                pass
-
-    def highest_resolution_and_path_for_band(self, bandString):
-        potential10m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R10m')) if
-                        image.endswith(bandString + '_10m.jp2')]
-        potential20m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R20m')) if
-                        image.endswith(bandString + '_20m.jp2')]
-        potential60m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R60m')) if
-                        image.endswith(bandString + '_60m.jp2')]
-        if len(potential10m) == 1:
-            return 10, os.path.join(self.resolution_folder_path,'R10m',potential10m[0])
-        elif len(potential20m) == 1:
-            return 20, os.path.join(self.resolution_folder_path,'R20m',potential20m[0])
-        elif len(potential60m) == 1:
-            return 60, os.path.join(self.resolution_folder_path,'R60m',potential60m[0])
-        else:
-            raise("Band not available")
-
-    def band_to_numpy_array(self,image_path):
-        """Opens image in JP2 file and returns it casted to a numpy array
-                """
-        img = gdal.Open(image_path)  # load image
-        band = img.GetRasterBand(1)  # get bands
-        band_np = band.ReadAsArray().astype(float)  #convert into numpy arrays. Floats because of the subsequent division
-        return band_np
-
-
-#####END Sentinel Class#######
-
-
-#####START INDEXES#######
-class SatelliteIndex:
-    def __init__(self,name):
-        self.name = name
-
-idxs = {}
-
-
-#Basic index function, which calculates (channel1 - channel2)/(channel1 + channel2)
-#input: 2 x 2D-numpy array, output = 1 x 2D-numpy array
-def build_simple_index(channel1, channel2):
-    # calculate index
-    idx = channel1 - channel2
-    idx = np.divide(idx, (channel1 + channel2))
-    return idx
-
-
-#Normalized Difference Vegetation Index
-NDVI = SatelliteIndex('Normalized Difference Vegetation Index')
-NDVI.abbreviation = 'NDVI'
-NDVI.channels = ['B08', 'B04']
-NDVI.function = build_simple_index
-NDVI.use = 'Detection of vegetation'
-NDVI.Source = 'https://www.sentinel-hub.com/eoproducts/ndvi-normalized-difference-vegetation-index'
-idxs['NDVI'] = (NDVI)
-
-#Normalized Difference Water Index
-NDWI = SatelliteIndex('Normalized Difference Water Index')
-NDWI.abbreviation = 'NDWI'
-NDWI.channels = ['B08', 'B11']
-NDWI.function = build_simple_index
-NDWI.use = 'Detection of water'
-NDWI.Source = 'https://www.sentinel-hub.com/develop/documentation/eo_products/Sentinel2EOproducts'
-idxs['NDWI'] = NDWI
-
-#Modified Normalized Difference Water Index
-MNDWI = SatelliteIndex('Modified Normalized Difference Water Index')
-MNDWI.abbreviation = 'MNDWI'
-MNDWI.channels = ['B03', 'B11']
-MNDWI.function = build_simple_index
-MNDWI.use = 'Detection of water'
-MNDWI.Source = 'https://www.mdpi.com/2072-4292/8/4/354'
-idxs['MNDWI'] = MNDWI
-
-#####END INDEXES#######
-
-#####START PRODUCTS#######
-class SatelliteProduct:
-    def __init__(self, name, channels, abbreviation, source):
-        self.name = name
-        self.channels = channels
-        self.abbreviation = abbreviation
-        self.source = source
-
-products = {}
-
-#The order is always red, green and blue.
-
-TrueColour = SatelliteProduct("True Colour Image", ["B04", "B03", "B02"], "True Colour", "https://www.sentinel-hub.com/eoproducts/true-color")
-products['True Colour'] = TrueColour
-
-FalseColour = SatelliteProduct("False Colour Composite", ["B08", "B04", "B03"], "False Colour", "https://www.sentinel-hub.com/eoproducts/false-color")
-products['False Colour'] = FalseColour
-
-#####END PRODUCTS#######
-
+from .core.products import products
+from .core.indexes import idxs
+from .core.sentinel_class import sentinelImage
 
 class sentinel2Indices:
     """QGIS Plugin Implementation."""
@@ -358,4 +244,5 @@ class sentinel2Indices:
             a = sentImage.band_to_numpy_array(path)
             print(a.shape)
 
+            print(products)
             pass
