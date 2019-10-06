@@ -43,3 +43,17 @@ MNDWI.function = build_simple_index
 MNDWI.use = 'Detection of water'
 MNDWI.Source = 'https://www.mdpi.com/2072-4292/8/4/354'
 idxs['MNDWI'] = MNDWI
+
+#Normalized Burn Ratio
+NBR = SatelliteIndex('Normalized Burn Ratio')
+NBR.abbreviation = 'NBR'
+NBR.channels = ['B08', 'B12']
+NBR.function = build_simple_index
+NBR.use = 'Detection of water'
+NBR.Source = 'https://www.indexdatabase.de/db/si-single.php?sensor_id=96&rsindex_id=53'
+idxs['NBR'] = NBR
+
+
+
+
+

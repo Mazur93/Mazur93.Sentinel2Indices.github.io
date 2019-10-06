@@ -14,3 +14,6 @@ products['True Colour'] = TrueColour
 
 FalseColour = SatelliteProduct("False Colour Composite", ["B08", "B04", "B03"], "False Colour", "https://www.sentinel-hub.com/eoproducts/false-color")
 products['False Colour'] = FalseColour
+
+ShortWaveIR = SatelliteProduct("Short-wave Infrared", ["B12", "B08", "B04"], "Short-wave Infrared", "https://www.sentinel-hub.com/develop/documentation/eo_products/Sentinel2EOproducts")
+products['Short-wave Infrared'] = ShortWaveIR
