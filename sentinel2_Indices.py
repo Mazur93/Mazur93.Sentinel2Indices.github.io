@@ -225,6 +225,15 @@ class sentinel2Indices:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+
+            #If folder is not ending in .SAFE do nothing, show message self.sentinelFolder.endsWith(".SAFE")
+            if (not (self.sentinelFolder[-5:] == (".SAFE"))):
+                print("Your input sucks")
+                #show message box that it is not possible because field is empty or folder does not end with .SAFE
+                return "sucks"
+                
+
+
             print(self.sentinelFolder)
             selectedIndices = [item.text() for item in self.dlg.potentialIndices.selectedItems()]
             selectedIndices.sort()

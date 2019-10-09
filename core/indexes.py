@@ -1,6 +1,8 @@
 import numpy as np
 
+#https://www.indexdatabase.de/db/s-single.php?id=96
 
+#class of an satellite index, created only with name
 class SatelliteIndex:
     def __init__(self,name):
         self.name = name
@@ -50,7 +52,7 @@ NBR.abbreviation = 'NBR'
 NBR.channels = ['B08', 'B12']
 NBR.function = build_simple_index
 NBR.use = 'Detection of water'
-NBR.Source = 'https://www.indexdatabase.de/db/si-single.php?sensor_id=96&rsindex_id=53'
+NBR.Source = 'https://www.indexdatabase.de/db/si-single.php?sensor_id=96&rsindex_id=53r'
 idxs['NBR'] = NBR
 
 
