@@ -12,17 +12,17 @@ class sentinelImage:
         self.resolution_folder_path = os.path.join(self.granule_folder, self.under_granule_folder, 'IMG_DATA')
         self.resolution_folder_names = ['R10m', 'R20m', 'R60m']
 
-    def get_band(self, bandString, resolution):
-        highest_resolution_available = highest_resolution_for_band(self, bandString)
-        if resolution == highest_resolution_available:
-            pass #get image from folder
-        #create image in resolution
-        else:
-            if resolution < highest_resolution_available:
-                raise Exception('The requested resolution is better than the highest available')
-            else:
-                # sampling to coarser resolution
-                pass
+    # def get_band(self, bandString, resolution):
+    #     highest_resolution_available = highest_resolution_for_band(self, bandString)
+    #     if resolution == highest_resolution_available:
+    #         pass #get image from folder
+    #     #create image in resolution
+    #     else:
+    #         if resolution < highest_resolution_available:
+    #             raise Exception('The requested resolution is better than the highest available')
+    #         else:
+    #             # sampling to coarser resolution
+    #             pass
 
     def highest_resolution_and_path_for_band(self, bandString):
         potential10m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R10m')) if

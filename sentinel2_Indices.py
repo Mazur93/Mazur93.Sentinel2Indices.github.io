@@ -23,7 +23,7 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QFileDialog
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -211,6 +211,9 @@ class sentinel2Indices:
         self.dlg.potentialProducts.clear()
         # load products
         self.dlg.potentialProducts.addItems([product.abbreviation for product in products.values()])
+        self.dlg.potentialProducts.takeItem(1).setWhatsThis("TEST")
+        print(self.dlg.potentialProducts.takeItem(1))
+        
 
         #clear sentinel folder
         self.sentinelFolder = ''
@@ -224,34 +227,35 @@ class sentinel2Indices:
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-
+            # substitute wiith your code.
+            folderWrong = False
             #If folder is not ending in .SAFE do nothing, show message self.sentinelFolder.endsWith(".SAFE")
             if (not (self.sentinelFolder[-5:] == (".SAFE"))):
-                print("Your input sucks")
+                QMessageBox.warning(self.iface.mainWindow(),"Sentinel Folder error", "There was no folder selected or the folder does not end with .SAFE")
                 #show message box that it is not possible because field is empty or folder does not end with .SAFE
-                return "sucks"
+                folderWrong = True
                 
 
+            if not folderWrong:
 
-            print(self.sentinelFolder)
-            selectedIndices = [item.text() for item in self.dlg.potentialIndices.selectedItems()]
-            selectedIndices.sort()
-            print(selectedIndices)
+                print(self.sentinelFolder)
+                selectedIndices = [item.text() for item in self.dlg.potentialIndices.selectedItems()]
+                selectedIndices.sort()
+                print(selectedIndices)
 
-            selectedProducts = [item.text() for item in self.dlg.potentialProducts.selectedItems()]
-            selectedProducts.sort()
-            print(selectedProducts)
+                selectedProducts = [item.text() for item in self.dlg.potentialProducts.selectedItems()]
+                selectedProducts.sort()
+                print(selectedProducts)
 
-            for i in selectedProducts:
-                print(products[i].channels)
+                for i in selectedProducts:
+                    print(products[i].channels)
 
-            sentImage = sentinelImage(self.sentinelFolder)
-            print (sentImage.tile_name)
-            res, path = sentImage.highest_resolution_and_path_for_band("B03")
-            print("Path: " + path)
-            a = sentImage.band_to_numpy_array(path)
-            print(a.shape)
+                sentImage = sentinelImage(self.sentinelFolder)
+                print (sentImage.tile_name)
+                res, path = sentImage.highest_resolution_and_path_for_band("B03")
+                print("Path: " + path)
+                a = sentImage.band_to_numpy_array(path)
+                print(a.shape)
 
-            print(products)
-            pass
+                print(products)
+
