@@ -34,8 +34,10 @@ import numpy as np
 import glob
 import gdal
 from .core.products import products
-from .core.indexes import idxs
+from .core.indexes import idxs, build_simple_index
 from .core.sentinel_class import sentinelImage
+from .core.helper_functions import *
+
 
 class sentinel2Indices:
     """QGIS Plugin Implementation."""
@@ -211,14 +213,10 @@ class sentinel2Indices:
         self.dlg.potentialProducts.clear()
         # load products
         self.dlg.potentialProducts.addItems([product.abbreviation for product in products.values()])
-        self.dlg.potentialProducts.takeItem(1).setWhatsThis("TEST")
-        print(self.dlg.potentialProducts.takeItem(1))
-        
 
         #clear sentinel folder
         self.sentinelFolder = ''
         self.dlg.lineEdit.clear()
-
 
         # show the dialog
         self.dlg.show()
@@ -226,18 +224,18 @@ class sentinel2Indices:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute wiith your code.
+
             folderWrong = False
             #If folder is not ending in .SAFE do nothing, show message self.sentinelFolder.endsWith(".SAFE")
             if (not (self.sentinelFolder[-5:] == (".SAFE"))):
                 QMessageBox.warning(self.iface.mainWindow(),"Sentinel Folder error", "There was no folder selected or the folder does not end with .SAFE")
                 #show message box that it is not possible because field is empty or folder does not end with .SAFE
                 folderWrong = True
-                
+
 
             if not folderWrong:
 
+                created_upsampled_images = []
                 print(self.sentinelFolder)
                 selectedIndices = [item.text() for item in self.dlg.potentialIndices.selectedItems()]
                 selectedIndices.sort()
@@ -251,11 +249,32 @@ class sentinel2Indices:
                     print(products[i].channels)
 
                 sentImage = sentinelImage(self.sentinelFolder)
-                print (sentImage.tile_name)
-                res, path = sentImage.highest_resolution_and_path_for_band("B03")
-                print("Path: " + path)
-                a = sentImage.band_to_numpy_array(path)
-                print(a.shape)
+                for i in selectedIndices:
+                    compatible_resolutions_bool, resolution_list = check_resolution_compability(sentImage,idxs[i].channels)
+                    #if resolutions do not match create upsampled versions of those channels that do not match
+                    if not compatible_resolutions_bool:
+                        highest_resolution = min(resolution_list)
+                        for idx, resolution in enumerate(resolution_list):
+                            if resolution != highest_resolution:
+                                res, image_path = sentImage.highest_resolution_and_path_for_band(idxs[i].channels[idx])
+                                result = change_resolution(image_path, highest_resolution, 1)
+                                created_upsampled_images.append(result)
+                                print(result)
+                    #index_image = build_simple_index(sentImage.highest_resolution_and_path_for_band(idxs[i].channels[0]))
+
+
+                # print (sentImage.tile_name)
+                # res, path = sentImage.highest_resolution_and_path_for_band("B03")
+                # print("Path: " + path + ", res: " + str(res))
+                # res, path = sentImage.highest_resolution_and_path_for_band("B09")
+                # print("Path: " + path + ", res: " + str(res))
+                # a = sentImage.band_to_numpy_array(path)
+                # print(a.shape)
+                print(sentImage.highest_resolution_and_path_for_band('B11'))
+                #if user does not want to have upsampled images
+                for upsampled_image in created_upsampled_images:
+                    os.remove(upsampled_image)
+                    print("Deleted:" + upsampled_image)
 
                 print(products)
 

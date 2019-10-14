@@ -26,11 +26,11 @@ class sentinelImage:
 
     def highest_resolution_and_path_for_band(self, bandString):
         potential10m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R10m')) if
-                        image.endswith(bandString + '_10m.jp2')]
+                        image.endswith(bandString + '_10m.jp2') or image.endswith(bandString + '_10m.tiff')]
         potential20m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R20m')) if
-                        image.endswith(bandString + '_20m.jp2')]
+                        image.endswith(bandString + '_20m.jp2') or image.endswith(bandString + '_20m.tiff')]
         potential60m = [image for image in os.listdir(os.path.join(self.resolution_folder_path, 'R60m')) if
-                        image.endswith(bandString + '_60m.jp2')]
+                        image.endswith(bandString + '_60m.jp2') or image.endswith(bandString + '_60m.tiff')]
         if len(potential10m) == 1:
             return 10, os.path.join(self.resolution_folder_path,'R10m',potential10m[0])
         elif len(potential20m) == 1:
@@ -41,7 +41,7 @@ class sentinelImage:
             raise("Band not available")
 
     def band_to_numpy_array(self, image_path):
-        """Opens image in JP2 file and returns it casted to a numpy array
+        """Opens image in JP2 or Tiff format and returns it casted to a numpy array
                 """
         #load image
         img = gdal.Open(image_path)

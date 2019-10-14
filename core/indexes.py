@@ -10,9 +10,10 @@ class SatelliteIndex:
 idxs = {}
 
 
-#Basic index function, which calculates (channel1 - channel2)/(channel1 + channel2)
-#input: 2 x 2D-numpy array, output = 1 x 2D-numpy array
+
 def build_simple_index(channel1, channel2):
+    """Basic index function, which calculates (channel1 - channel2)/(channel1 + channel2)
+        input: 2 x 2D-numpy array, output = 1 x 2D-numpy array"""
     # calculate index
     idx = channel1 - channel2
     idx = np.divide(idx, (channel1 + channel2))

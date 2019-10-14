@@ -2,6 +2,8 @@
 #processing.algorithmHelp("gdal:warpreproject")
 #https://docs.qgis.org/3.4/en/docs/user_manual/processing/console.html
 import processing
+import os
+from qgis.core import QgsRasterLayer
 
 def change_resolution(image_path, new_resolution, upsampling_method):
 	"""Changes resolution of a given image. The parameters are image_path, new_resolution and upsampling_method.
@@ -19,18 +21,27 @@ def change_resolution(image_path, new_resolution, upsampling_method):
 		- 9: Median
 		- 10: First quartile
 		- 11: Third quartile"""
-	Image2beUpsampled = QgsRasterLayer(imagePath)
+	Image2beUpsampled = QgsRasterLayer(image_path)
 
-	newImageBaseName = os.path.basename(imagePath).replace(str(int(Image2beUpsampled.rasterUnitsPerPixelX())) + 'm', str(new_resolution)+'m')
+	newImageBaseName = os.path.basename(image_path).replace(str(int(Image2beUpsampled.rasterUnitsPerPixelX())) + 'm', str(new_resolution)+'m')
 	param = {}
 	param['INPUT'] = Image2beUpsampled
 	param['TARGET_CRS'] = Image2beUpsampled.crs()
-	#os.path.dirname(imagePath) os.path.basename(imagePath)
-	#TODO resolution_folder create dictionary with 10,20,60 resolution folder paths
-	param['OUTPUT'] = os.path.join(resolution_folder[new_resolution], newImageBaseName)'D:\\test\\R60m\\testOutput10Channel7.tiff'
+	# print("image path: " + image_path)
+	param['OUTPUT'] = os.path.join(os.path.dirname(image_path).replace(os.path.dirname(image_path)[-3:], str(new_resolution)+'m'), newImageBaseName.replace('jp2','tiff'))
+	# print("output path: " + param['OUTPUT'])#,'D:\\test\\R60m\\testOutput10Channel7.tiff')
 	param['RESAMPLING'] = upsampling_method
 	param['TARGET_RESOLUTION'] = new_resolution
+	print("before processing")
 	result  = processing.run("gdal:warpreproject",param)
-	delete a
+	print("after processing")
+	#delete a
 	return result['OUTPUT']
 	
+def check_resolution_compability(sentinelImage, channel_list):
+	resolutions = []
+	for i in channel_list:
+		res, path = sentinelImage.highest_resolution_and_path_for_band(i)
+		resolutions.append(res)
+	print("Resolutions: " + str(resolutions))
+	return len(set(resolutions)) == 1, resolutions
